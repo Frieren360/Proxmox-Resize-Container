@@ -1,7 +1,7 @@
 #!/bin/sh
 help_text() {
         printf "$0 -s SIZE CONTAINERS \n"
-        printf "SIZE corresponds to any integer/decimal with the disk size units at the end such as 64GB.\n"
+        printf "SIZE corresponds to any integer/decimal with the disk size units at the end such as 64G.\n"
         printf "CONTAINERS refers to the VMIDs of each container and can be specified multiple times with each VMID seperated by a space.\n\n"
 }
 
@@ -20,6 +20,11 @@ error_message() {
                 no_containers)
                         help_text
                         printf "Please specify the VMID of atleast one container.\n\n"
+                        exit 1
+                        ;;
+                zfs_gt_lxc)
+                        printf "Cannot shrink below used disk space.\n\n"
+                        exit 1
                         ;;
                 *)
                         help_text
@@ -52,4 +57,5 @@ resize_lxc() {
         PVE_NAME=$(zfs list | grep "$arg" | awk '{print $1}')
         ZFS_USED="$(zfs list $PVE_NAME | awk 'NR > 1 {print $2}')"
         printf "%d\n" "$(to_bytes $ZFS_USED)"
+        [ "$ZFS_USED" -lt "$lxc_size" ] && printf "Yes!\n" || error_message zfs_gt_lxc 
 }
