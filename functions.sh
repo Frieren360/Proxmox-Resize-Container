@@ -23,7 +23,7 @@ error_message() {
                         exit 1
                         ;;
                 zfs_gt_lxc)
-                        printf "Cannot shrink below used disk space.\n\n"
+                        printf "Cannot shrink below used disk space.\n"
                         exit 1
                         ;;
                 *)
