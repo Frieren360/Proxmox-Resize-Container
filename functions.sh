@@ -35,9 +35,9 @@ error_message() {
 
 to_bytes() {
     printf '%s\n' "$1" | awk '
-    /K$/ { sub(/K$/,""); print $0 * 1024; next }
-    /M$/ { sub(/M$/,""); print $0 * 1024 * 1024; next }
-    /G$/ { sub(/G$/,""); print $0 * 1024 * 1024 * 1024; next }
+    /K$/ { sub(/K$/,""); printf "%.0f\n", $0 * 1024; next }
+    /M$/ { sub(/M$/,""); printf "%.0f\n", $0 * 1024 * 1024; next }
+    /G$/ { sub(/G$/,""); printf "%.0f\n", $0 * 1024 * 1024 * 1024; next }
     { print $0 }
     '
 }
