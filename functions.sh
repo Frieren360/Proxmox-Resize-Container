@@ -26,7 +26,15 @@ error_message() {
                         exit 1
                         ;;
         esac
+}
 
+to_bytes() {
+    printf '%s\n' "$1" | awk '
+    /K$/ { sub(/K$/,""); print $0 * 1024; next }
+    /M$/ { sub(/M$/,""); print $0 * 1024 * 1024; next }
+    /G$/ { sub(/G$/,""); print $0 * 1024 * 1024 * 1024; next }
+    { print $0 }
+    '
 }
 
 resize_lxc() {
