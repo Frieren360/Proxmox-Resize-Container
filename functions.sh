@@ -17,13 +17,16 @@ error_message() {
                         printf "Size is missing. Specify the size with the -s flag.\n\n"
                         exit 1
                         ;;
+                no_containers)
+                        help_text
+                        printf "Please specify the VMID of atleast one container.\n\n"
+                        ;;
                 *)
                         help_text
                         exit 1
                         ;;
         esac
 
-        [ "$1" = "no_containers" ] && printf "Please specify the VMID of atleast one container.\n\n"
 }
 
 resize_lxc() {
