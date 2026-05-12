@@ -50,6 +50,6 @@ resize_lxc() {
         [ -z "$lxc_size" ] && error_message missing_size_lxc
         
         PVE_NAME=$(zfs list | grep "$arg" | awk '{print $1}')
-        ZFS_USED="$(zfs list $PVE_NAME | awk 'NR > 1 {print $2}'"
+        ZFS_USED="$(zfs list $PVE_NAME | awk 'NR > 1 {print $2}')"
         printf "%d\n" "$(to_bytes $ZFS_USED)"
 }
