@@ -1,8 +1,8 @@
 #!/bin/sh
 help_text() {
         printf "$0 -s SIZE CONTAINERS \n"
-        printf "SIZE corresponds to any integer/decimal with the disk size units at the end such as 6>
-        printf "CONTAINERS refers to the VMIDs of each container and can be specified multiple times >
+        printf "SIZE corresponds to any integer/decimal with the disk size units at the end such as 64GB.\n"
+        printf "CONTAINERS refers to the VMIDs of each container and can be specified multiple times with each VMID seperated by a space.\n\n"
 }
 
 error_message() {
