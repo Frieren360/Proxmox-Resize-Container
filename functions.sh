@@ -56,5 +56,5 @@ resize_lxc() {
         
         PVE_NAME=$(zfs list | grep "$arg" | awk '{print $1}')
         ZFS_USED="$(zfs list $PVE_NAME | awk 'NR > 1 {print $2}')"
-        [ "$(to_bytes $ZFS_USED)" -lt "$(to_bytes $lxc_size)" ] && printf "Yes!\n" || error_message zfs_gt_lxc 
+        [ "$(to_bytes $ZFS_USED)" -lt "$(to_bytes $lxc_size)" ] && zfs set refquota="$lxc_size" "$PVE_NAME" || error_message zfs_gt_lxc
 }
