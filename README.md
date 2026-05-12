@@ -183,7 +183,3 @@ zfs set refquota=16G PVE1/subvol-79990-disk-1
 - POSIX-compliant shell (sh, bash, etc.)
 - Proxmox with ZFS storage backend
 - Standard Unix utilities: grep, awk, zfs
-
-## License
-
-This project is provided as-is for use with Proxmox systems.
