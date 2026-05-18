@@ -21,7 +21,6 @@ for arg in "$@"; do
                 if resize_lxc -s "$size" -c "$arg"; then
                         :
                 else
-                # Seems to never reach past here!
                         for node in $REMOTE_NODES; do
                                 if resize_lxc -s "$size" -c "$arg" -n "$node"; then
                                     echo "DEBUG arg='$arg' node='$node' size='$size'"
