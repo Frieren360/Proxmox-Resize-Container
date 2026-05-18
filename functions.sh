@@ -87,7 +87,7 @@ resize_lxc() {
                 SIZE_BYTES="$(to_bytes "$lxc_size")"
 
                 if [ "$USED_BYTES" -lt "$SIZE_BYTES" ]; then
-                    ssh "$remote_node" "zfs set refquota='$lxc_size' '$PVE_NAME'" >/dev/null 2>&1
+                    ssh "$remote_node" "zfs set refquota='$lxc_size' quota='$lxc_size' '$PVE_NAME'" >/dev/null 2>&1
                 else
                     error_message zfs_gt_lxc "$container"
                 fi
@@ -104,7 +104,7 @@ resize_lxc() {
                 SIZE_BYTES="$(to_bytes "$lxc_size")"
 
                 if [ "$USED_BYTES" -lt "$SIZE_BYTES" ]; then
-                    zfs set refquota="$lxc_size" "$PVE_NAME" >/dev/null 2>&1
+                    zfs set refquota="$lxc_size" quota="$lxc_size" "$PVE_NAME" >/dev/null 2>&1
                 else
                     error_message zfs_gt_lxc "$container"
                 fi
