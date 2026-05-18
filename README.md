@@ -1,10 +1,10 @@
 # Proxmox Resize Container
 
-This utility provides an automated way to resize LXC container disks in Proxmox. It simplifies the process of shrinking ZFS-backed container volumes through a straightforward command-line interface.
+This utility provides an automated way to resize LXC container disks in Proxmox. It simplifies the process of resizing ZFS-backed container volumes through a straightforward command-line interface. The script works seamlessly with both single nodes and clustered Proxmox environments.
 
 ## Overview
 
-Resizing Proxmox LXC container disks manually involves multiple steps and manual ZFS commands. This script automates the process by allowing you to specify the target disk size and container IDs, and it handles the resize operation for you.
+Resizing Proxmox LXC container disks manually involves multiple steps and manual ZFS commands. This script automates the process by allowing you to specify the target disk size and container IDs. In clustered environments, it can automatically search across remote nodes to find and resize containers.
 
 ## Prerequisites
 
@@ -12,6 +12,7 @@ Resizing Proxmox LXC container disks manually involves multiple steps and manual
 - Root access or sudo privileges on the Proxmox node
 - All target containers must be powered off before resizing
 - A recent backup of your containers (highly recommended)
+- For cluster support: SSH key-based authentication configured to remote Proxmox nodes
 
 ## Before You Start: Backup Your Containers
 
@@ -32,7 +33,40 @@ To create a backup via the Proxmox Web UI:
    ```
    chmod +x proxmox-resize.sh
    ```
-3. Ensure both `proxmox-resize.sh` and `functions.sh` are in the same directory
+3. Ensure all three files are in the same directory:
+   - proxmox-resize.sh
+   - functions.sh
+   - proxmox-resize.config
+
+## Configuration
+
+### Setting Up Remote Nodes (Cluster Support)
+
+If you are using a Proxmox cluster with multiple nodes, you can configure the script to search across remote nodes automatically.
+
+Edit the `proxmox-resize.config` file and uncomment the REMOTE_NODES variable:
+
+```
+REMOTE_NODES="node1 node2 node3"
+```
+
+You can specify nodes by IP address or hostname:
+
+```
+REMOTE_NODES="192.168.1.100 proxmox-node2 proxmox-node3"
+```
+
+Or mix both:
+
+```
+REMOTE_NODES="192.168.1.100 node2.example.com 10.0.0.50"
+```
+
+When REMOTE_NODES is configured, the script will first try to resize the container on the local node. If the container is not found locally, it will search through each remote node in order until it finds and resizes the container.
+
+### Single Node Setup
+
+If you are running a standalone Proxmox node, leave REMOTE_NODES commented out or empty. The script will only search the local node.
 
 ## Usage
 
@@ -71,7 +105,8 @@ The script performs the following operations for each container:
 1. Looks up the ZFS subvolume name corresponding to the VMID
 2. Retrieves the current disk usage for that subvolume
 3. Validates that the current usage is less than the target size (you cannot shrink below the amount of data actually used)
-4. Sets the ZFS refquota to enforce the new disk size limit
+4. Sets the ZFS refquota and quota to enforce the new disk size limit
+5. If the container is not found locally and remote nodes are configured, searches each remote node in sequence
 
 ### Finding Your Container's VMID
 
@@ -102,7 +137,7 @@ zfs list PVE1/subvol-79990-disk-1
 
 ### What Gets Resized
 
-The script modifies the ZFS refquota for the container's disk subvolume. This is the maximum amount of disk space the container can use, not the physical allocated space.
+The script modifies the ZFS refquota and quota for the container's disk subvolume. These settings control the maximum amount of disk space the container can use.
 
 ### Size Constraints
 
@@ -132,6 +167,19 @@ You forgot to include the size parameter. Use the `-s` flag followed by the size
 ### Error: "Please specify the VMID of at least one container"
 
 You did not provide any VMIDs. Ensure at least one VMID is specified after the size parameter.
+
+### Error: "Could not find container on any remote nodes"
+
+The container VMID was not found on the local node or any configured remote nodes. Verify that the VMID is correct and that remote nodes are properly configured with SSH access.
+
+### SSH Connection Issues with Remote Nodes
+
+If you configured remote nodes but the script cannot connect, verify:
+
+1. SSH key-based authentication is set up between nodes
+2. The root user can SSH to remote nodes without a password
+3. Node names or IP addresses are correct in proxmox-resize.config
+4. The remote nodes are online and reachable
 
 ### Checking Current Disk Usage
 
@@ -177,9 +225,11 @@ zfs set refquota=16G PVE1/subvol-79990-disk-1
 3. Keep the containers powered off during the resize
 4. Verify the resize was successful by checking the container's filesystem after powering it back on
 5. Allow some buffer space between current usage and the new size limit to prevent future issues
+6. When using remote nodes, verify SSH connectivity before configuring nodes
 
 ## Requirements
 
 - POSIX-compliant shell (sh, bash, etc.)
 - Proxmox with ZFS storage backend
 - Standard Unix utilities: grep, awk, zfs
+- For cluster setups: ssh command-line utility
