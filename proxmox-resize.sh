@@ -24,7 +24,6 @@ for arg in "$@"; do
                 else
                         for node in $REMOTE_NODES; do
                                 if resize_lxc -s "$size" -c "$arg" -n "$node"; then
-                                    echo "DEBUG arg='$arg' node='$node' size='$size'"
                                     found=1
                                     break
                                 fi
