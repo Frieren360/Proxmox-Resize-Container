@@ -16,5 +16,34 @@ shift $((OPTIND - 1))
 [ -z "$size" ] && error_message missing_size
 
 for arg in "$@"; do
-        resize_lxc -s $size -c $arg
+        if [ -n "$REMOTE_NODES" ]; then
+                found=0
+                if resize_lxc -s "$size" -c "$arg"; then
+                        :
+                else
+                # Seems to never reach past here!
+                        for node in $REMOTE_NODES; do
+                                if resize_lxc -s "$size" -c "$arg" -n "$node"; then
+                                    echo "DEBUG arg='$arg' node='$node' size='$size'"
+                                    found=1
+                                    break
+                                fi
+                        done
+
+                        if [ "$found" -ne 1 ]; then
+                                error_message lxc_not_found_on_any_node "$arg"
+                        fi
+                fi
+        else
+                resize_lxc -s "$size" -c "$arg"
+                rc=$?
+
+                if [ "$rc" -ne 0 ]; then
+                    if [ "$rc" -eq 3 ]; then
+                        error_message lxc_not_found "$arg"
+                    fi
+
+                    exit 3
+                fi
+        fi
 done
