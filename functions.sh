@@ -26,6 +26,14 @@ error_message() {
                         printf "Cannot shrink below used disk space.\n"
                         exit 1
                         ;;
+                lxc_not_found_on_any_node)
+                        printf "Could not find container %s on any remote nodes.\n" "$2"
+                        exit 2
+                        ;;
+                lxc_not_found)
+                        printf "Could not find container %s.\n" "$2"
+                        exit 3
+                        ;;
                 *)
                         help_text
                         exit 1
@@ -55,17 +63,50 @@ resize_lxc() {
 
         [ -z "$lxc_size" ] && error_message missing_size_lxc
 
+        lxc_size=${lxc_size%B}
+
         # for remote nodes in a cluster
         if [ -n "$remote_node" ]; then
-                PVE_NAME="$(ssh "$remote_node" "zfs list | grep $arg | awk '{print \$1}'")"
-                ZFS_USED="$(ssh "$remote_node" "zfs list $PVE_NAME | awk 'NR > 1 {print \$2}'")"
-                [ "$(to_bytes "$ZFS_USED")" -lt "$(to_bytes "$lxc_size")" ] && ssh "$remote_node" "zfs set refquota=$lxc_size '$PVE_NAME'" || error_message zfs_gt_lxc
-        else
-                PVE_NAME="$(zfs list | grep "$arg" | awk '{print $1}')"
-                ZFS_USED="$(zfs list "$PVE_NAME" | awk 'NR > 1 {print $2}')"
-                [ "$(to_bytes $ZFS_USED)" -lt "$(to_bytes $lxc_size)" ] && zfs set refquota="$lxc_size" "$PVE_NAME" || error_message zfs_gt_lxc
-        fi
-        
+                PVE_NAME="$(
+                    ssh "$remote_node" "
+                        zfs list 2>/dev/null | awk -v c='$container' '\$1 ~ c {print \$1; exit}'
+                    "
+                )"
 
-       
+                if [ -z "$PVE_NAME" ]; then
+                    return 3
+                fi
+
+                ZFS_USED="$(
+                    ssh "$remote_node" "
+                        zfs list '$PVE_NAME' 2>/dev/null | awk 'NR > 1 {print \$2}'
+                    "
+                )"
+
+                USED_BYTES="$(to_bytes "$ZFS_USED")"
+                SIZE_BYTES="$(to_bytes "$lxc_size")"
+
+                if [ "$USED_BYTES" -lt "$SIZE_BYTES" ]; then
+                    ssh "$remote_node" "zfs set refquota='$lxc_size' '$PVE_NAME'" >/dev/null 2>&1
+                else
+                    error_message zfs_gt_lxc "$container"
+                fi
+        else
+                PVE_NAME="$(zfs list 2>/dev/null | awk -v c="$container" '$1 ~ c {print $1; exit}')"
+
+                if [ -z "$PVE_NAME" ]; then
+                    return 3
+                fi
+
+                ZFS_USED="$(zfs list "$PVE_NAME" 2>/dev/null | awk 'NR > 1 {print $2}')"
+
+                USED_BYTES="$(to_bytes "$ZFS_USED")"
+                SIZE_BYTES="$(to_bytes "$lxc_size")"
+
+                if [ "$USED_BYTES" -lt "$SIZE_BYTES" ]; then
+                    zfs set refquota="$lxc_size" "$PVE_NAME" >/dev/null 2>&1
+                else
+                    error_message zfs_gt_lxc "$container"
+                fi
+        fi
 }
