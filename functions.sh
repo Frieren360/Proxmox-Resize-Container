@@ -67,11 +67,20 @@ resize_lxc() {
 
         # for remote nodes in a cluster
         if [ -n "$remote_node" ]; then
+                 ROOTFS="$(
+                         ssh "$remote_node" "pct config $container | awk -F': ' '/^rootfs:/ {print \$2}'"
+        )"
+
+                if [ -z "$ROOTFS" ]; then
+                    error_message lxc_not_found "$container"
+                fi
+
+                VOLUME="${ROOTFS%%,*}"
+
                 PVE_NAME="$(
-                    ssh "$remote_node" "
-                        zfs list 2>/dev/null | awk -v c='$container' '\$1 ~ c {print \$1; exit}'
-                    "
+                    ssh "$remote_node" "pvesm path $VOLUME" 2>/dev/null | sed 's|^zfs:||'
                 )"
+
 
                 if [ -z "$PVE_NAME" ]; then
                     return 3
@@ -95,7 +104,9 @@ resize_lxc() {
                     error_message zfs_gt_lxc "$container"
                 fi
         else
-                PVE_NAME="$(zfs list 2>/dev/null | awk -v c="$container" '$1 ~ c {print $1; exit}')"
+                ROOTFS="$(pct config "$container" | awk -F': ' '/^rootfs:/ {print $2}')"
+                VOLUME="${ROOTFS%%,*}"
+                PVE_NAME="$(pvesm path "$VOLUME" | sed 's|^zfs:||')"
 
                 if [ -z "$PVE_NAME" ]; then
                     return 3
