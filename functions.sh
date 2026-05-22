@@ -97,7 +97,7 @@ resize_lxc() {
                     ssh "$remote_node" "zfs set refquota='$lxc_size' quota='$lxc_size' '$PVE_NAME'" >/dev/null 2>&1 && \
                     ROOTFS="$(awk -F': ' '/^rootfs:/ {print $2}' /etc/pve/lxc/${container}.conf)"
                     NEW_ROOTFS="$(printf '%s\n' "$ROOTFS" | sed -E "s/size=[^,]+/size=${lxc_size}/")"
-                    pct set "$container" -rootfs "$NEW_ROOTFS"
+                    ssh "$remote_node" "pct set '$container' -rootfs '$NEW_ROOTFS'"
                 else
                     error_message zfs_gt_lxc "$container"
                 fi
