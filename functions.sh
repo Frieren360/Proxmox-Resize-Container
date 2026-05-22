@@ -77,7 +77,7 @@ resize_lxc() {
 
                 VOLUME="${ROOTFS%%,*}"
                 PVE_NAME="$(
-                    ssh "$remote_node" "zfs list -H -o name -t filesystem | grep -m1 subvol-${container}-"
+                    ssh "$remote_node" "zfs list -H -o name -t filesystem | grep -m1 subvol-${container}-\""
                 )"
 
                 if [ -z "$PVE_NAME" ]; then
@@ -94,10 +94,8 @@ resize_lxc() {
                 SIZE_BYTES="$(to_bytes "$lxc_size")"
 
                 if [ "$USED_BYTES" -lt "$SIZE_BYTES" ]; then
-                    ssh "$remote_node" "zfs set refquota='$lxc_size' quota='$lxc_size' '$PVE_NAME'" >/dev/null 2>&1 && \
-                    ROOTFS="$(awk -F': ' '/^rootfs:/ {print $2}' /etc/pve/lxc/${container}.conf)"
-                    NEW_ROOTFS="$(printf '%s\n' "$ROOTFS" | sed -E "s/size=[^,]+/size=${lxc_size}/")"
-                    ssh "$remote_node" "pct set '$container' -rootfs '$NEW_ROOTFS'"
+                    ssh "$remote_node" "zfs set refquota=$lxc_size quota=$lxc_size $PVE_NAME"
+                    ssh "$remote_node" "pct set $container -rootfs '$VOLUME,size=$lxc_size'"
                 else
                     error_message zfs_gt_lxc "$container"
                 fi
