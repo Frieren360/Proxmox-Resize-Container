@@ -2,7 +2,7 @@
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
 . "$SCRIPT_DIR/functions.sh"
-. "$SCRIPT_DIR/proxmox-resize.config"
+. "$SCRIPT_DIR/proxmox-resize.conf"
 
 while getopts "s:" opt; do
         case "$opt" in
