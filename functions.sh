@@ -76,11 +76,9 @@ resize_lxc() {
                 fi
 
                 VOLUME="${ROOTFS%%,*}"
-
                 PVE_NAME="$(
-                    ssh "$remote_node" "pvesm path $VOLUME" 2>/dev/null | sed 's|^zfs:||'
+                    ssh "$remote_node" "zfs list -H -o name -t filesystem | grep -m1 subvol-${container}-)"
                 )"
-
 
                 if [ -z "$PVE_NAME" ]; then
                     return 3
@@ -106,7 +104,7 @@ resize_lxc() {
         else
                 ROOTFS="$(pct config "$container" | awk -F': ' '/^rootfs:/ {print $2}')"
                 VOLUME="${ROOTFS%%,*}"
-                PVE_NAME="$(pvesm path "$VOLUME" | sed 's|^zfs:||')"
+                PVE_NAME="$(zfs list -H -o name -t filesystem | grep -m1 "subvol-${container}-")"
 
                 if [ -z "$PVE_NAME" ]; then
                     return 3
