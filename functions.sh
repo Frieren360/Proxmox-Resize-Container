@@ -77,7 +77,7 @@ resize_lxc() {
 
                 VOLUME="${ROOTFS%%,*}"
                 PVE_NAME="$(
-                    ssh "$remote_node" "zfs list -H -o name -t filesystem | grep -m1 subvol-${container}-)"
+                    ssh "$remote_node" "zfs list -H -o name -t filesystem | grep -m1 subvol-${container}-"
                 )"
 
                 if [ -z "$PVE_NAME" ]; then
