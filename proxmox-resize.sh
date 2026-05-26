@@ -17,7 +17,12 @@ shift $((OPTIND - 1))
 
 [ -z "$size" ] && error_message missing_size
 
+MAX_JOBS=4
+running=0
+pids=""
+
 for arg in "$@"; do
+(
         if [ -n "$REMOTE_NODES" ]; then
                 found=0
                 if resize_lxc -s "$size" -c "$arg"; then
@@ -46,4 +51,14 @@ for arg in "$@"; do
                     exit 3
                 fi
         fi
+        ) &
+        pid=$!
+        pids="$pids $!"
+        running=$((running + 1))
+        if [ "$running" -ge "$MAX_JOBS" ]; then
+                wait
+                running=0
+        fi
 done
+
+wait
