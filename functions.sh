@@ -94,16 +94,10 @@ $remote_info
 EOF
         
         VOLUME="${ROOTFS%%,*}"
-        PVE_NAME=$(run_cmd "$remote_node" zfs list -H -o name -t filesystem | grep -m1 "subvol-${container}-")
 
         if [ -z "$PVE_NAME" ]; then
                 return 3
         fi
-
-        ZFS_USED="$(
-            run_cmd "$remote_node" \
-            zfs get -H -o value used "$PVE_NAME" 2>/dev/null
-        )"
 
         USED_BYTES="$(to_bytes "$ZFS_USED")"
         SIZE_BYTES="$(to_bytes "$lxc_size")"
