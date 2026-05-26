@@ -64,6 +64,8 @@ to_bytes() {
 }
 
 resize_lxc() {
+        container=""
+        lxc_size=""
         remote_node=""
         
         while getopts "c:n:s:" opt; do
