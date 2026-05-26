@@ -43,6 +43,17 @@ error_message() {
         esac
 }
 
+run_cmd() {
+    node=$1
+    shift
+
+    if [ -n "$node" ]; then
+        ssh -o BatchMode=yes "$node" "$@"
+    else
+        sh -c "$*"
+    fi
+}
+
 to_bytes() {
     printf '%s\n' "$1" | awk '
     /K$/ { sub(/K$/,""); printf "%.0f\n", $0 * 1024; next }
@@ -68,62 +79,25 @@ resize_lxc() {
         [ -z "$lxc_size" ] && error_message missing_size_lxc
 
         lxc_size=${lxc_size%B}
+        ROOTFS="$(run_cmd "$remote_node" pct config "$container" | awk -F': ' '/^rootfs:/ {print $2}')"
+        VOLUME="${ROOTFS%%,*}"
+        PVE_NAME="$(run_cmd "$remote_node" zfs list -H -o name -t filesystem | grep -m1 "subvol-${container}-")"
 
-        # for remote nodes in a cluster
-        if [ -n "$remote_node" ]; then
-                 ROOTFS="$(
-                         ssh "$remote_node" "pct config $container | awk -F': ' '/^rootfs:/ {print \$2}'"
-        )"
+        if [ -z "$PVE_NAME" ]; then
+                return 3
+        fi
 
-                if [ -z "$ROOTFS" ]; then
-                    error_message lxc_not_found "$container"
-                fi
+        ZFS_USED="$(run_cmd "$remote_node" zfs list "$PVE_NAME" 2>/dev/null | awk 'NR > 1 {print $2}')"
 
-                VOLUME="${ROOTFS%%,*}"
-                PVE_NAME="$(
-                    ssh "$remote_node" "zfs list -H -o name -t filesystem | grep -m1 subvol-${container}-"
-                )"
+        USED_BYTES="$(to_bytes "$ZFS_USED")"
+        SIZE_BYTES="$(to_bytes "$lxc_size")"
 
-                if [ -z "$PVE_NAME" ]; then
-                    return 3
-                fi
-
-                ZFS_USED="$(
-                    ssh "$remote_node" "
-                        zfs list '$PVE_NAME' 2>/dev/null | awk 'NR > 1 {print \$2}'
-                    "
-                )"
-
-                USED_BYTES="$(to_bytes "$ZFS_USED")"
-                SIZE_BYTES="$(to_bytes "$lxc_size")"
-
-                if [ "$USED_BYTES" -lt "$SIZE_BYTES" ]; then
-                    ssh "$remote_node" "zfs set refquota=$lxc_size quota=$lxc_size $PVE_NAME"
-                    ssh "$remote_node" "pct set $container -rootfs '$VOLUME,size=$lxc_size'"
-                else
-                    error_message zfs_gt_lxc "$container"
-                fi
+        if [ "$USED_BYTES" -lt "$SIZE_BYTES" ]; then
+                run_cmd "$remote_node" zfs set refquota="$lxc_size" quota="$lxc_size" "$PVE_NAME" >/dev/null 2>&1
+                ROOTFS="$(run_cmd "$remote_node" awk -F': ' '/^rootfs:/ {print $2}' /etc/pve/lxc/${container}.conf)"
+                NEW_ROOTFS="$(run_command "$remote_node" printf '%s\n' "$ROOTFS" | sed -E "s/size=[^,]+/size=${lxc_size}/")"
+                run_command "$remote_node" pct set "$container" -rootfs "$NEW_ROOTFS"
         else
-                ROOTFS="$(pct config "$container" | awk -F': ' '/^rootfs:/ {print $2}')"
-                VOLUME="${ROOTFS%%,*}"
-                PVE_NAME="$(zfs list -H -o name -t filesystem | grep -m1 "subvol-${container}-")"
-
-                if [ -z "$PVE_NAME" ]; then
-                    return 3
-                fi
-
-                ZFS_USED="$(zfs list "$PVE_NAME" 2>/dev/null | awk 'NR > 1 {print $2}')"
-
-                USED_BYTES="$(to_bytes "$ZFS_USED")"
-                SIZE_BYTES="$(to_bytes "$lxc_size")"
-
-                if [ "$USED_BYTES" -lt "$SIZE_BYTES" ]; then
-                    zfs set refquota="$lxc_size" quota="$lxc_size" "$PVE_NAME" >/dev/null 2>&1
-                    ROOTFS="$(awk -F': ' '/^rootfs:/ {print $2}' /etc/pve/lxc/${container}.conf)"
-                    NEW_ROOTFS="$(printf '%s\n' "$ROOTFS" | sed -E "s/size=[^,]+/size=${lxc_size}/")"
-                    pct set "$container" -rootfs "$NEW_ROOTFS"
-                else
-                    error_message zfs_gt_lxc "$container"
-                fi
+                error_message zfs_gt_lxc "$container"
         fi
 }
