@@ -79,7 +79,20 @@ resize_lxc() {
         [ -z "$lxc_size" ] && error_message missing_size_lxc
 
         lxc_size=${lxc_size%B}
-        ROOTFS=$(run_cmd "$remote_node" pct config "$container" | awk -F': ' '/^rootfs:/ {print $2}')
+        remote_info=$(
+                run_cmd "$remote_node" "
+                    ROOTFS=\$(pct config $container | awk -F': ' '/^rootfs:/ {print \$2}')
+                    PVE_NAME=\$(zfs list -H -o name -t filesystem | grep -m1 subvol-${container}-)
+                    ZFS_USED=\$(zfs get -H -o value used \"\$PVE_NAME\")
+
+                    printf '%s|%s|%s\n' \"\$ROOTFS\" \"\$PVE_NAME\" \"\$ZFS_USED\"
+                "
+                )
+
+        IFS='|' read -r ROOTFS PVE_NAME ZFS_USED <<EOF
+$remote_info
+EOF
+        
         VOLUME="${ROOTFS%%,*}"
         PVE_NAME=$(run_cmd "$remote_node" zfs list -H -o name -t filesystem | grep -m1 "subvol-${container}-")
 
