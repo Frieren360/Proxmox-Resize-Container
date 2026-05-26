@@ -89,16 +89,17 @@ resize_lxc() {
                 return 3
         fi
 
-        ZFS_USED="$(run_cmd "$remote_node" zfs list "$PVE_NAME" 2>/dev/null | awk 'NR > 1 {print $2}')"
+        ZFS_USED="$(
+            run_cmd "$remote_node" \
+            zfs get -H -o value used "$PVE_NAME" 2>/dev/null
+        )"
 
         USED_BYTES="$(to_bytes "$ZFS_USED")"
         SIZE_BYTES="$(to_bytes "$lxc_size")"
 
         if [ "$USED_BYTES" -lt "$SIZE_BYTES" ]; then
                 run_cmd "$remote_node" zfs set refquota="$lxc_size" quota="$lxc_size" "$PVE_NAME" >/dev/null 2>&1
-                ROOTFS="$(run_cmd "$remote_node" awk -F': ' '/^rootfs:/ {print $2}' /etc/pve/lxc/${container}.conf)"
-                NEW_ROOTFS="$(run_cmd "$remote_node" printf '%s\n' "$ROOTFS")"
-                NEW_ROOTFS="$(printf "%s" "$NEW_ROOTFS" | sed -E "s/size=[^,]+/size=${lxc_size}/")"
+                NEW_ROOTFS="${ROOTFS%size=*}size=$lxc_size"
                 run_cmd "$remote_node" pct set "$container" -rootfs "$NEW_ROOTFS"
         else
                 error_message zfs_gt_lxc "$container"
