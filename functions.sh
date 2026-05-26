@@ -81,7 +81,7 @@ resize_lxc() {
         lxc_size=${lxc_size%B}
         ROOTFS=$(run_cmd "$remote_node" pct config "$container" | awk -F': ' '/^rootfs:/ {print $2}')
         VOLUME="${ROOTFS%%,*}"
-        PVE_NAME="$(run_cmd "$remote_node" zfs list -H -o name -t filesystem | grep -m1 "subvol-${container}-")
+        PVE_NAME=$(run_cmd "$remote_node" zfs list -H -o name -t filesystem | grep -m1 "subvol-${container}-")
 
         if [ -z "$PVE_NAME" ]; then
                 return 3
