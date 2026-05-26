@@ -1,4 +1,6 @@
 #!/bin/sh
+set -eu
+
 help_text() {
         printf "Usage: $0 -s SIZE CONTAINERS \n"
         printf "SIZE corresponds to any integer/decimal with the disk size units at the end such as 64G.\n"
