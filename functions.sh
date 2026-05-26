@@ -53,6 +53,8 @@ to_bytes() {
 }
 
 resize_lxc() {
+        remote_node=""
+        
         while getopts "c:n:s:" opt; do
                 case "$opt" in
                         c) container="$OPTARG" ;;
