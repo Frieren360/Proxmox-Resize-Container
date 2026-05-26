@@ -1,9 +1,20 @@
 #!/bin/sh
 set -eu
 
+command -v pct >/dev/null || {
+    printf 'pct not found\n'
+    exit 1
+}
+
+command -v zfs >/dev/null || {
+    printf 'zfs not found\n'
+    exit 1
+}
+
 SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
 . "$SCRIPT_DIR/functions.sh"
 . "$SCRIPT_DIR/proxmox-resize.conf"
+
 
 while getopts "s:" opt; do
         case "$opt" in
