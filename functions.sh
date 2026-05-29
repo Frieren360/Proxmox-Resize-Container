@@ -4,7 +4,7 @@ set -eu
 help_text() {
         printf "Usage: $0 -s SIZE CONTAINERS \n"
         printf "SIZE corresponds to any integer/decimal with the disk size units at the end such as 64G.\n"
-        printf "CONTAINERS refers to the VMIDs of each container and can be specified multiple times with each VMID seperated by a space.\n\n"
+        printf "CONTAINERS refers to the VMIDs of each container and can be specified multiple times with each VMID separated by a space.\n\n"
 }
 
 error_message() {
