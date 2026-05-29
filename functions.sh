@@ -101,12 +101,12 @@ EOF
                 return 3
         fi
 
-        USED_BYTES="$(to_bytes "$ZFS_USED")"
-        SIZE_BYTES="$(to_bytes "$lxc_size")"
+        readonly USED_BYTES="$(to_bytes "$ZFS_USED")"
+        readonly SIZE_BYTES="$(to_bytes "$lxc_size")"
 
         if [ "$USED_BYTES" -le "$SIZE_BYTES" ]; then
                 run_cmd "$remote_node" zfs set refquota="$lxc_size" quota="$lxc_size" "$PVE_NAME" >/dev/null 2>&1
-                NEW_ROOTFS="${ROOTFS%size=*}size=$lxc_size"
+                readonly NEW_ROOTFS="${ROOTFS%size=*}size=$lxc_size"
                 run_cmd "$remote_node" pct set "$container" -rootfs "$NEW_ROOTFS"
         else
                 error_message zfs_gt_lxc "$container"
