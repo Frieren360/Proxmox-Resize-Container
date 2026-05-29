@@ -21,7 +21,7 @@ error_message() {
                         ;;
                 no_containers)
                         help_text
-                        printf "Please specify the VMID of atleast one container.\n\n"
+                        printf "Please specify the VMID of at least one container.\n\n"
                         exit 1
                         ;;
                 zfs_gt_lxc)
