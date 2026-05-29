@@ -11,7 +11,7 @@ command -v zfs >/dev/null || {
     exit 1
 }
 
-SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
+readonly SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
 . "$SCRIPT_DIR/functions.sh"
 . "$SCRIPT_DIR/proxmox-resize.conf"
 
@@ -29,7 +29,7 @@ shift $((OPTIND - 1))
 
 [ -z "$size" ] && error_message missing_size
 
-MAX_JOBS=4
+readonly MAX_JOBS=4
 running=0
 pids=""
 
