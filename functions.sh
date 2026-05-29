@@ -50,7 +50,7 @@ run_cmd() {
     if [ -n "$node" ]; then
         ssh -o BatchMode=yes "$node" "$@"
     else
-        sh -c "$*"
+        "$@"
     fi
 }
 
