@@ -55,14 +55,32 @@ run_cmd() {
 }
 
 to_bytes() {
-    printf '%s\n' "$1" | awk '
-    /K$/ { sub(/K$/,""); printf "%.0f\n", $0 * 1024; next }
-    /M$/ { sub(/M$/,""); printf "%.0f\n", $0 * 1024 * 1024; next }
-    /G$/ { sub(/G$/,""); printf "%.0f\n", $0 * 1024 * 1024 * 1024; next }
-    { print $0 }
-    '
-}
+    awk -v size="$1" '
+    BEGIN {
+        size = toupper(size)
 
+        multiplier = 1
+
+        if (size ~ /K$/) {
+            sub(/K$/, "", size)
+            multiplier = 1024
+        }
+        else if (size ~ /M$/) {
+            sub(/M$/, "", size)
+            multiplier = 1024^2
+        }
+        else if (size ~ /G$/) {
+            sub(/G$/, "", size)
+            multiplier = 1024^3
+        }
+        else if (size ~ /T$/) {
+            sub(/T$/, "", size)
+            multiplier = 1024^4
+        }
+
+        printf "%d\n", size * multiplier
+    }'
+}
 resize_lxc() {
         container=""
         lxc_size=""
