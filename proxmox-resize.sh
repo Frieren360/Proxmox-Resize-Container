@@ -63,14 +63,26 @@ for arg in "$@"; do
                     exit 3
                 fi
         fi
-        ) &
+    ) &
         pid=$!
-        pids="$pids $!"
+        pids="$pids $pid"
         running=$((running + 1))
-        if [ "$running" -ge "$MAX_JOBS" ]; then
-                wait
-                running=0
-        fi
-done
+    if [ "$running" -ge "$MAX_JOBS" ]; then
+        set -- $pids
 
-wait
+        oldest=$1
+
+        wait "$oldest"
+        rc=$?
+
+        shift
+        pids="$*"
+
+        running=$((running - 1))
+
+        [ "$rc" -ne 0 ] && exit "$rc"
+    fi
+done
+for pid in $pids; do
+    wait "$pid" || exit $?
+done
