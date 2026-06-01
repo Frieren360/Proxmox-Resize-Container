@@ -107,7 +107,7 @@ resize_lxc() {
 
                     printf '%s|%s|%s\n' \"\$ROOTFS\" \"\$PVE_NAME\" \"\$ZFS_USED\"
                 "
-                )
+                ) || return 3
 
         IFS='|' read -r ROOTFS PVE_NAME ZFS_USED <<EOF
 $remote_info
@@ -123,13 +123,6 @@ EOF
         SIZE_BYTES="$(to_bytes "$lxc_size")"
 
         if [ "$USED_BYTES" -le "$SIZE_BYTES" ]; then
-                if ! run_cmd "$remote_node" zfs set refquota="$lxc_size" quota="$lxc_size" "$PVE_NAME" >/dev/null 2>&1; then
-                        if [ -n "$remote_node" ]; then
-                                :
-                        else
-                                error_message lxc_not_found "$container"
-                        fi
-                fi
                 NEW_ROOTFS="${ROOTFS%size=*}size=$lxc_size"
                 run_cmd "$remote_node" pct set "$container" -rootfs "$NEW_ROOTFS" >/dev/null 2>&1
         else
