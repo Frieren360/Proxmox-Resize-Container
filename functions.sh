@@ -102,6 +102,8 @@ resize_lxc() {
         remote_info=$(
                 run_cmd "$remote_node" "
                     ROOTFS=\$(pct config "$container" | sed -n 's/^rootfs: //p')
+                    [ -z \"\$ROOTFS\" ] && exit 3
+
                     PVE_NAME=\$(zfs list -H -o name -t filesystem | grep -m1 subvol-${container}-disk-)
                     ZFS_USED=\$(zfs get -H -o value used \"\$PVE_NAME\")
 
