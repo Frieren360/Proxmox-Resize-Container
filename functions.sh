@@ -129,7 +129,7 @@ EOF
                         else
                                 error_message lxc_not_found "$container"
                         fi
-                        
+                fi
                 NEW_ROOTFS="${ROOTFS%size=*}size=$lxc_size"
                 run_cmd "$remote_node" pct set "$container" -rootfs "$NEW_ROOTFS"
         else
