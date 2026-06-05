@@ -11,7 +11,8 @@ command -v zfs >/dev/null || {
     exit 1
 }
 
-readonly SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
+SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
+readonly SCRIPT_DIR
 . "$SCRIPT_DIR/functions.sh"
 . "$SCRIPT_DIR/proxmox-resize.conf"
 
