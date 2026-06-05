@@ -104,7 +104,7 @@ resize_lxc() {
                     ROOTFS=\$(pct config "$container" 2>/dev/null | sed -n 's/^rootfs: //p')
                     [ -z \"\$ROOTFS\" ] && exit 3
 
-                    PVE_NAME=\$(zfs list -H -o name -t filesystem | grep -m1 subvol-${container}-disk-)
+                    PVE_NAME=\$(zfs list -H -o name -t filesystem | grep -m1 "^.*subvol-${container}-disk-[0-9]\+$")
                     ZFS_USED=\$(zfs get -H -o value used \"\$PVE_NAME\")
 
                     printf '%s|%s|%s\n' \"\$ROOTFS\" \"\$PVE_NAME\" \"\$ZFS_USED\"
