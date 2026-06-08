@@ -100,16 +100,33 @@ resize_lxc() {
 
         lxc_size=${lxc_size%B}
         remote_info=$(
-                run_cmd "$remote_node" "
-                    ROOTFS=\$(pct config "$container" 2>/dev/null | sed -n 's/^rootfs: //p')
-                    [ -z \"\$ROOTFS\" ] && exit 3
+    run_cmd "$remote_node" "
+        set -eu
 
-                    PVE_NAME=\$(zfs list -H -o name -t filesystem | grep -m1 "^.*subvol-${container}-disk-[0-9]\+$")
-                    ZFS_USED=\$(zfs get -H -o value used \"\$PVE_NAME\")
+        ROOTFS=\$(pct config "$container" 2>/dev/null | sed -n 's/^rootfs: //p')
+        [ -n \"\$ROOTFS\" ] || exit 3
 
-                    printf '%s|%s|%s\n' \"\$ROOTFS\" \"\$PVE_NAME\" \"\$ZFS_USED\"
-                "
-                ) || return 3
+        # ROOTFS format:
+        # PVE1:subvol-79990-disk1,size=8G
+        VOLUME=\${ROOTFS#*:}
+        VOLUME=\${VOLUME%,*}
+
+        # Convert Proxmox format -> ZFS format if needed
+        # disk1 -> disk-1
+        ZVOL_NAME=\$(echo \"\$VOLUME\" | sed -E 's/disk([0-9]+)/disk-\1/')
+
+        # Find full dataset name safely
+        PVE_NAME=\$(zfs list -H -o name -t filesystem | awk -v v=\"\$ZVOL_NAME\" '
+            \$0 ~ v {print \$0; exit}
+        ')
+
+        [ -n \"\$PVE_NAME\" ] || exit 4
+
+        ZFS_USED=\$(zfs get -H -o value used \"\$PVE_NAME\")
+
+        printf '%s|%s|%s\n' \"\$ROOTFS\" \"\$PVE_NAME\" \"\$ZFS_USED\"
+    "
+) || return 3
 
         IFS='|' read -r ROOTFS PVE_NAME ZFS_USED <<EOF
 $remote_info
