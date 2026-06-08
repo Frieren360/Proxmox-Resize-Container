@@ -78,7 +78,7 @@ to_bytes() {
             multiplier = 1024^4
         }
 
-        printf "%d\n", size * multiplier
+        printf "%.0f\n", size * multiplier
     }'
 }
 resize_lxc() {
