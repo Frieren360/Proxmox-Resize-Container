@@ -48,7 +48,7 @@ run_cmd() {
     shift
 
     if [ -n "$node" ]; then
-        ssh -o BatchMode=yes "$node" "$@"
+        ssh -o BatchMode=yes "$node" "sh -c '$*'"
     else
         sh -c "$*"
     fi
@@ -82,6 +82,7 @@ to_bytes() {
     }'
 }
 resize_lxc() {
+        OPTIND=1
         container=""
         lxc_size=""
         remote_node=""
@@ -131,8 +132,6 @@ resize_lxc() {
         IFS='|' read -r ROOTFS PVE_NAME ZFS_USED <<EOF
 $remote_info
 EOF
-        
-        VOLUME="${ROOTFS%%,*}"
 
         if [ -z "$PVE_NAME" ]; then
                 return 3
