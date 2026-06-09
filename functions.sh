@@ -145,6 +145,6 @@ EOF
                 NEW_ROOTFS="${ROOTFS%size=*}size=$lxc_size"
                 run_cmd "$remote_node" pct set "$container" -rootfs "$NEW_ROOTFS"
         else
-                error_message zfs_gt_lxc "$container"
+                error_message zfs_gt_lxc
         fi
 }
